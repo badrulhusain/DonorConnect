@@ -11,14 +11,10 @@ A production-ready MERN application that automates WhatsApp notifications when a
 │  React UI   │────▶│  Express API     │────▶│  MongoDB     │
 │  (Tailwind) │     │  (JWT Auth)      │     │  (Mongoose)  │
 └─────────────┘     └────────┬─────────┘     └──────────────┘
-                             │ push job
-                    ┌────────▼─────────┐     ┌──────────────┐
-                    │  BullMQ Queue    │────▶│  Redis       │
-                    │  (whatsappQueue) │     └──────────────┘
-                    └────────┬─────────┘
-                             │ process
+                             │ setImmediate (non-blocking)
                     ┌────────▼─────────┐
-                    │  WhatsApp Worker │────▶ Meta Cloud API
+                    │  WhatsApp Service│────▶ Meta Cloud API
+                    │  (3x retry)      │
                     └──────────────────┘
 ```
 
@@ -29,7 +25,6 @@ A production-ready MERN application that automates WhatsApp notifications when a
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local or Atlas)
-- Redis (local or Upstash)
 - Meta WhatsApp Business Account
 
 ### 1. Clone & Install
@@ -58,7 +53,6 @@ cp .env.example .env
 |---|---|
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | Long random string (32+ chars) |
-| `REDIS_HOST` | Redis hostname |
 | `WHATSAPP_PHONE_NUMBER_ID` | From Meta Developer Dashboard |
 | `WHATSAPP_ACCESS_TOKEN` | Permanent access token |
 | `WHATSAPP_TEMPLATE_NAME` | Approved template name |
@@ -90,13 +84,7 @@ npm run dev
 # Runs on http://localhost:5000
 ```
 
-**Terminal 2 — Queue Worker:**
-```bash
-cd backend
-npm run worker
-```
-
-**Terminal 3 — Frontend:**
+**Terminal 2 — Frontend:**
 ```bash
 cd frontend
 npm start
@@ -196,7 +184,7 @@ curl -X POST http://localhost:5000/api/mark-paid \
 - **Donor Management** — Add, edit, deactivate donors
 - **Payment Recording** — Single & bulk mark as paid
 - **WhatsApp Automation** — Template messages via Meta Cloud API
-- **Queue System** — BullMQ with 3-retry exponential backoff
+- **Retry Logic** — 3-attempt exponential backoff (2s, 4s, 8s) built-in
 - **Message Logs** — Full audit trail of every notification
 - **Analytics Dashboard** — Totals, averages, delivery rate
 - **CSV Export** — Download all donor data

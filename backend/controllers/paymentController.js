@@ -1,8 +1,48 @@
 const mongoose = require('mongoose');
 const Donor = require('../models/Donor');
 const MessageLog = require('../models/MessageLog');
-const { whatsappQueue } = require('../queue/whatsappQueue');
+const { sendWhatsAppMessage } = require('../services/whatsappService');
 const logger = require('../utils/logger');
+
+// Send with up to `maxAttempts` retries (simple exponential backoff)
+const sendWithRetry = async (payload, logId, maxAttempts = 3) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await MessageLog.findByIdAndUpdate(logId, { $inc: { attempts: 1 } });
+      const result = await sendWhatsAppMessage(payload);
+
+      await MessageLog.findByIdAndUpdate(logId, {
+        status: 'sent',
+        whatsappMessageId: result.messageId,
+        sentAt: new Date(),
+        errorMessage: null,
+      });
+
+      logger.info('WhatsApp message sent', { logId, attempt, ...payload });
+      return;
+    } catch (err) {
+      lastError = err;
+      logger.warn('WhatsApp attempt failed', { logId, attempt, error: err.message });
+
+      // Permanent errors (e.g. bad auth) — no point retrying
+      if (err.permanent) break;
+
+      // Wait before retrying: 2s, 4s, 8s...
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt - 1)));
+      }
+    }
+  }
+
+  await MessageLog.findByIdAndUpdate(logId, {
+    status: 'failed',
+    errorMessage: lastError?.message,
+  });
+
+  logger.error('WhatsApp message failed after all attempts', { logId, error: lastError?.message });
+};
 
 const markPaid = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -35,36 +75,19 @@ const markPaid = async (req, res, next) => {
 
     await session.commitTransaction();
 
-    const job = await whatsappQueue.add(
-      'send-message',
-      {
-        donorId: donor._id.toString(),
-        donorName: donor.name,
-        phone: donor.phone,
-        amount,
-        logId: log[0]._id.toString(),
-        language: msgLang,
-      },
-      {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-        removeOnComplete: 100,
-        removeOnFail: 200,
-      }
+    // Fire-and-forget: send WhatsApp in background, don't block the response
+    setImmediate(() =>
+      sendWithRetry(
+        { phone: donor.phone, donorName: donor.name, amount, language: msgLang },
+        log[0]._id
+      )
     );
 
-    await MessageLog.findByIdAndUpdate(log[0]._id, { jobId: job.id });
-
-    logger.info('Payment marked and job queued', {
-      donorId,
-      amount,
-      jobId: job.id,
-      logId: log[0]._id,
-    });
+    logger.info('Payment marked', { donorId, amount, logId: log[0]._id });
 
     res.json({
       success: true,
-      message: 'Payment recorded. WhatsApp notification queued.',
+      message: 'Payment recorded. WhatsApp notification sending.',
       data: {
         donor: {
           id: donor._id,
@@ -73,7 +96,6 @@ const markPaid = async (req, res, next) => {
           lastPayment: donor.lastPayment,
           lastPaidAt: donor.lastPaidAt,
         },
-        jobId: job.id,
       },
     });
   } catch (err) {
@@ -165,14 +187,15 @@ async function _processSinglePayment(donorId, amount, language) {
 
     await session.commitTransaction();
 
-    const job = await whatsappQueue.add(
-      'send-message',
-      { donorId: donor._id.toString(), donorName: donor.name, phone: donor.phone, amount, logId: log[0]._id.toString(), language: msgLang },
-      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } }
+    // Fire-and-forget per donor
+    setImmediate(() =>
+      sendWithRetry(
+        { phone: donor.phone, donorName: donor.name, amount, language: msgLang },
+        log[0]._id
+      )
     );
 
-    await MessageLog.findByIdAndUpdate(log[0]._id, { jobId: job.id });
-    return { jobId: job.id, donorName: donor.name };
+    return { donorName: donor.name };
   } catch (err) {
     await session.abortTransaction();
     throw err;

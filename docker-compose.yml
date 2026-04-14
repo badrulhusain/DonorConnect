@@ -12,16 +12,6 @@ services:
     environment:
       MONGO_INITDB_DATABASE: amanahtrack
 
-  redis:
-    image: redis:7-alpine
-    container_name: amanahtrack-redis
-    restart: unless-stopped
-    ports:
-      - '6379:6379'
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-
   backend:
     build:
       context: ./backend
@@ -34,27 +24,8 @@ services:
       - ./backend/.env
     environment:
       MONGODB_URI: mongodb://mongodb:27017/amanahtrack
-      REDIS_HOST: redis
     depends_on:
       - mongodb
-      - redis
-
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: amanahtrack-worker
-    restart: unless-stopped
-    command: node queue/worker.js
-    env_file:
-      - ./backend/.env
-    environment:
-      MONGODB_URI: mongodb://mongodb:27017/amanahtrack
-      REDIS_HOST: redis
-    depends_on:
-      - mongodb
-      - redis
-      - backend
 
   frontend:
     build:
@@ -69,4 +40,3 @@ services:
 
 volumes:
   mongo_data:
-  redis_data:
