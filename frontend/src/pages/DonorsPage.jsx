@@ -5,11 +5,13 @@ import DonorTable from '../components/donors/DonorTable';
 import AddDonorModal from '../components/donors/AddDonorModal';
 import MarkPaidModal from '../components/donors/MarkPaidModal';
 import BulkMarkPaidModal from '../components/donors/BulkMarkPaidModal';
+import BulkSendMessageModal from '../components/donors/BulkSendMessageModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
   ArrowDownTrayIcon,
   CheckBadgeIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from '@heroicons/react/24/outline';
 
 const ITEMS_PER_PAGE = 20;
@@ -21,7 +23,7 @@ export default function DonorsPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
 
-  const [modal, setModal] = useState(null); // 'add' | 'edit' | 'markPaid' | 'bulk'
+  const [modal, setModal] = useState(null); // 'add' | 'edit' | 'markPaid' | 'bulk' | 'sendMsg'
   const [activeDonor, setActiveDonor] = useState(null);
 
   const fetchDonors = useCallback(async (page = 1, q = search) => {
@@ -115,13 +117,22 @@ export default function DonorsPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {selected.length > 0 && (
-            <button
-              onClick={() => setModal('bulk')}
-              className="btn-primary"
-            >
-              <CheckBadgeIcon className="w-4 h-4" />
-              Mark {selected.length} as Paid
-            </button>
+            <>
+              <button
+                onClick={() => setModal('sendMsg')}
+                className="btn-secondary"
+              >
+                <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
+                Send Message
+              </button>
+              <button
+                onClick={() => setModal('bulk')}
+                className="btn-primary"
+              >
+                <CheckBadgeIcon className="w-4 h-4" />
+                Mark {selected.length} as Paid
+              </button>
+            </>
           )}
           <button onClick={handleExportCSV} className="btn-secondary">
             <ArrowDownTrayIcon className="w-4 h-4" />
@@ -204,6 +215,9 @@ export default function DonorsPage() {
       )}
       {modal === 'bulk' && selectedDonors.length > 0 && (
         <BulkMarkPaidModal donors={selectedDonors} onConfirm={handleBulkMarkPaid} onClose={closeModal} />
+      )}
+      {modal === 'sendMsg' && selectedDonors.length > 0 && (
+        <BulkSendMessageModal donors={selectedDonors} onClose={closeModal} />
       )}
     </div>
   );

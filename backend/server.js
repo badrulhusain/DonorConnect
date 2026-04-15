@@ -14,6 +14,7 @@ const seedAdmin = require('./utils/seedAdmin');
 const authRoutes = require('./routes/auth');
 const donorRoutes = require('./routes/donors');
 const paymentRoutes = require('./routes/payments');
+const messageRoutes = require('./routes/messages');
 const { notFound, globalErrorHandler } = require('./middleware/errorHandler');
 
 // Ensure logs directory exists
@@ -62,6 +63,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Error handlers
 app.use(notFound);

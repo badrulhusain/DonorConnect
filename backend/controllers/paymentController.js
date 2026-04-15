@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Donor = require('../models/Donor');
 const MessageLog = require('../models/MessageLog');
 const { sendWhatsAppMessage } = require('../services/whatsappService');
+const messageQueue = require('../utils/messageQueue');
 const logger = require('../utils/logger');
 
 // Send with up to `maxAttempts` retries (simple exponential backoff)
@@ -75,8 +76,8 @@ const markPaid = async (req, res, next) => {
 
     await session.commitTransaction();
 
-    // Fire-and-forget: send WhatsApp in background, don't block the response
-    setImmediate(() =>
+    // Queue for rate-limited background sending (500 ms between sends)
+    messageQueue.add(() =>
       sendWithRetry(
         { phone: donor.phone, donorName: donor.name, amount, language: msgLang },
         log[0]._id
@@ -187,8 +188,8 @@ async function _processSinglePayment(donorId, amount, language) {
 
     await session.commitTransaction();
 
-    // Fire-and-forget per donor
-    setImmediate(() =>
+    // Queue for rate-limited background sending
+    messageQueue.add(() =>
       sendWithRetry(
         { phone: donor.phone, donorName: donor.name, amount, language: msgLang },
         log[0]._id

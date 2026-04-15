@@ -46,13 +46,34 @@ const buildTemplatePayload = (phone, donorName, amount, language = 'en') => {
   };
 };
 
-const sendWhatsAppMessage = async ({ phone, donorName, amount, language = 'en' }) => {
+// general_announcement template — one body variable {{1}}
+const buildAnnouncementPayload = (phone, templateParams = {}) => ({
+  messaging_product: 'whatsapp',
+  recipient_type: 'individual',
+  to: phone,
+  type: 'template',
+  template: {
+    name: 'general_announcement',
+    language: { code: 'en_US' },
+    components: [
+      {
+        type: 'body',
+        parameters: [{ type: 'text', text: String(templateParams['1'] || '') }],
+      },
+    ],
+  },
+});
+
+const sendWhatsAppMessage = async ({ phone, donorName, amount, language = 'en', templateName, templateParams }) => {
   if (!WA_API_URL || !PHONE_NUMBER_ID || !ACCESS_TOKEN) {
     throw new Error('WhatsApp API credentials not configured');
   }
 
   const url = `${WA_API_URL}/${PHONE_NUMBER_ID}/messages`;
-  const payload = buildTemplatePayload(phone, donorName, amount, language);
+  const payload =
+    templateName === 'general_announcement'
+      ? buildAnnouncementPayload(phone, templateParams)
+      : buildTemplatePayload(phone, donorName, amount, language);
 
   try {
     const response = await axios.post(url, payload, {

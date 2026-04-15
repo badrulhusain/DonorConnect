@@ -51,4 +51,16 @@ export const paymentAPI = {
   getLogs: (params) => api.get('/logs', { params }),
 };
 
+// Messages (bulk announcement send + SSE progress)
+export const messageAPI = {
+  sendBulk: (data) => api.post('/messages/send-bulk', data),
+  // Returns the SSE URL — caller opens it with EventSource
+  // EventSource cannot set headers, so the JWT is passed as a query param
+  progressUrl: (jobId) => {
+    const token = localStorage.getItem('at_token');
+    const base = process.env.REACT_APP_API_URL || '/api';
+    return `${base}/messages/progress/${jobId}?token=${encodeURIComponent(token)}`;
+  },
+};
+
 export default api;
