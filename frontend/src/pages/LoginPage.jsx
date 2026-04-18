@@ -32,8 +32,8 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-2xl shadow-lg mb-4">
             <LockClosedIcon className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">AmanahTrack</h1>
-          <p className="text-gray-500 mt-1">Donor Management System</p>
+          <h1 className="text-3xl font-bold text-gray-900">WA Broadcast</h1>
+          <p className="text-gray-500 mt-1">WhatsApp Bulk Messaging Platform</p>
         </div>
 
         <div className="card p-8">
@@ -89,7 +89,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-gray-400 text-xs mt-6">
-          AmanahTrack v1.0 &mdash; Secure Admin Portal
+          WA Broadcast &mdash; Secure Admin Portal
         </p>
       </div>
     </div>

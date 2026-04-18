@@ -7,14 +7,12 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// Attach JWT on every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('at_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Handle 401 globally — force logout
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -27,40 +25,28 @@ api.interceptors.response.use(
   }
 );
 
-// Auth
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
 };
 
-// Donors
-export const donorAPI = {
-  getAll: (params) => api.get('/donors', { params }),
-  add: (data) => api.post('/donors', data),
-  update: (id, data) => api.put(`/donors/${id}`, data),
-  remove: (id) => api.delete(`/donors/${id}`),
-  analytics: () => api.get('/donors/analytics'),
-  exportCSV: () =>
-    api.get('/donors/export/csv', { responseType: 'blob' }),
+export const contactAPI = {
+  getAll: (params) => api.get('/contacts', { params }),
+  getTags: () => api.get('/contacts/tags'),
+  add: (data) => api.post('/contacts', data),
+  import: (data) => api.post('/contacts/import', data),
+  update: (id, data) => api.put(`/contacts/${id}`, data),
+  remove: (id) => api.delete(`/contacts/${id}`),
 };
 
-// Payments
-export const paymentAPI = {
-  markPaid: (data) => api.post('/mark-paid', data),
-  bulkMarkPaid: (data) => api.post('/mark-paid/bulk', data),
-  getLogs: (params) => api.get('/logs', { params }),
-};
-
-// Messages (bulk announcement send + SSE progress)
-export const messageAPI = {
-  sendBulk: (data) => api.post('/messages/send-bulk', data),
-  // Returns the SSE URL — caller opens it with EventSource
-  // EventSource cannot set headers, so the JWT is passed as a query param
-  progressUrl: (jobId) => {
-    const token = localStorage.getItem('at_token');
-    const base = process.env.REACT_APP_API_URL || '/api';
-    return `${base}/messages/progress/${jobId}?token=${encodeURIComponent(token)}`;
-  },
+export const broadcastAPI = {
+  getAll: (params) => api.get('/broadcasts', { params }),
+  getStats: () => api.get('/broadcasts/stats'),
+  create: (data) => api.post('/broadcasts', data),
+  getById: (id) => api.get(`/broadcasts/${id}`),
+  send: (id) => api.post(`/broadcasts/${id}/send`),
+  getLogs: (id, params) => api.get(`/broadcasts/${id}/logs`, { params }),
+  remove: (id) => api.delete(`/broadcasts/${id}`),
 };
 
 export default api;

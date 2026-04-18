@@ -3,8 +3,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   HomeIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
+  UserGroupIcon,
+  MegaphoneIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
@@ -12,8 +12,8 @@ import {
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: HomeIcon, end: true },
-  { to: '/donors', label: 'Donors', icon: UsersIcon },
-  { to: '/logs', label: 'Message Logs', icon: ClipboardDocumentListIcon },
+  { to: '/contacts', label: 'Contacts', icon: UserGroupIcon },
+  { to: '/broadcasts', label: 'Broadcasts', icon: MegaphoneIcon },
 ];
 
 export default function Layout() {
@@ -30,11 +30,11 @@ export default function Layout() {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-green-700">
         <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-          <span className="text-green-700 font-bold text-sm">AT</span>
+          <span className="text-green-700 font-bold text-sm">WB</span>
         </div>
         <div>
-          <h1 className="text-white font-bold text-lg leading-none">AmanahTrack</h1>
-          <p className="text-green-200 text-xs">Donor Management</p>
+          <h1 className="text-white font-bold text-lg leading-none">WA Broadcast</h1>
+          <p className="text-green-200 text-xs">Bulk Messaging Platform</p>
         </div>
       </div>
 
@@ -84,12 +84,10 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 bg-green-700 flex-shrink-0">
         <SidebarContent />
       </aside>
 
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
@@ -105,14 +103,12 @@ export default function Layout() {
         </div>
       )}
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile topbar */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
           <button onClick={() => setSidebarOpen(true)} className="text-gray-500">
             <Bars3Icon className="w-6 h-6" />
           </button>
-          <span className="font-bold text-green-700">AmanahTrack</span>
+          <span className="font-bold text-green-700">WA Broadcast</span>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

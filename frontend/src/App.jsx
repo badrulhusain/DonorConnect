@@ -4,13 +4,19 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import DonorsPage from './pages/DonorsPage';
-import LogsPage from './pages/LogsPage';
+import ContactsPage from './pages/ContactsPage';
+import BroadcastsPage from './pages/BroadcastsPage';
+import CreateBroadcastPage from './pages/CreateBroadcastPage';
+import BroadcastLogsPage from './pages/BroadcastLogsPage';
 import Layout from './components/common/Layout';
 
 const ProtectedRoute = ({ children }) => {
   const { admin, loading } = useAuth();
-  if (loading) return <div className="flex items-center justify-center h-screen"><span className="animate-spin h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen">
+      <span className="animate-spin h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full" />
+    </div>
+  );
   return admin ? children : <Navigate to="/login" replace />;
 };
 
@@ -35,8 +41,10 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<DashboardPage />} />
-            <Route path="donors" element={<DonorsPage />} />
-            <Route path="logs" element={<LogsPage />} />
+            <Route path="contacts" element={<ContactsPage />} />
+            <Route path="broadcasts" element={<BroadcastsPage />} />
+            <Route path="broadcasts/new" element={<CreateBroadcastPage />} />
+            <Route path="broadcasts/:id/logs" element={<BroadcastLogsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

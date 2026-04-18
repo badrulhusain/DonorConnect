@@ -12,25 +12,21 @@ const fs = require('fs');
 const logger = require('./utils/logger');
 const seedAdmin = require('./utils/seedAdmin');
 const authRoutes = require('./routes/auth');
-const donorRoutes = require('./routes/donors');
-const paymentRoutes = require('./routes/payments');
-const messageRoutes = require('./routes/messages');
+const contactRoutes = require('./routes/contacts');
+const broadcastRoutes = require('./routes/broadcasts');
 const { notFound, globalErrorHandler } = require('./middleware/errorHandler');
 
-// Ensure logs directory exists
 const logsDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
 
 const app = express();
 
-// Security
 app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -45,31 +41,24 @@ const authLimiter = rateLimit({
 app.use('/api', limiter);
 app.use('/api/auth/login', authLimiter);
 
-// Parsers
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// HTTP logging
 app.use(morgan('combined', {
   stream: { write: (msg) => logger.http(msg.trim()) },
 }));
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/donors', donorRoutes);
-app.use('/api', paymentRoutes);
-app.use('/api/messages', messageRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/broadcasts', broadcastRoutes);
 
-// Error handlers
 app.use(notFound);
 app.use(globalErrorHandler);
 
-// DB + Server startup
 const PORT = process.env.PORT || 5000;
 
 const start = async () => {
@@ -80,7 +69,7 @@ const start = async () => {
     await seedAdmin();
 
     app.listen(PORT, () => {
-      logger.info(`AmanahTrack server running on port ${PORT}`);
+      logger.info(`WhatsApp Broadcast server running on port ${PORT}`);
     });
   } catch (err) {
     logger.error('Startup failed', { error: err.message });
