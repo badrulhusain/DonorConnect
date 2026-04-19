@@ -1,6 +1,6 @@
-# AmanahTrack — Donor Communication Automation System
+# AmanahTrack — WhatsApp Notification System
 
-A production-ready MERN application that automates WhatsApp notifications when a donor payment is recorded. Fully free to run — no Docker, no Redis, no paid services required.
+A production-ready MERN application for sending WhatsApp notifications to contacts — supporting bulk broadcasts, event invitations, programme invitations, and payment confirmations. Built for educational institutions in Kerala with English and Malayalam language support.
 
 ---
 
@@ -11,23 +11,55 @@ A production-ready MERN application that automates WhatsApp notifications when a
 │  React UI   │────▶│  Express API         │────▶│  MongoDB     │
 │  (Tailwind) │     │  (JWT Auth)          │     │  (Mongoose)  │
 └─────────────┘     └──────────┬───────────┘     └──────────────┘
-                               │ in-memory MessageQueue (500ms/send)
+                               │ batched (50/sec, 1s delay)
                     ┌──────────▼───────────┐
-                    │  WhatsApp Service    │────▶ Meta Cloud API
-                    │  (3× retry backoff)  │
+                    │  WhatsApp Service    │────▶ Gupshup API
+                    │  (3× retry, backoff) │
                     └──────────────────────┘
 ```
 
-No Redis. No BullMQ. No Docker required for local development or free-tier deployment.
+---
+
+## Features
+
+- **JWT Authentication** — Secure admin-only access
+- **Contact Management** — Add, edit, tag, and import contacts in bulk
+- **Broadcast Messaging** — Send WhatsApp template messages to any group of contacts
+- **Event Invitations** — Bulk invite contacts to events (English & Malayalam)
+- **Programme Invitations** — Bulk invite contacts to programmes (English & Malayalam)
+- **Payment Confirmations** — Notify contacts of received payments
+- **CSV Upload** — Upload recipient lists via CSV file or paste directly
+- **Message Preview** — Preview message content before sending
+- **Notification Logs** — Full audit trail with filter by type, status, and date
+- **Resend Failed** — One-click resend for failed notifications
+- **Rate-limited Batching** — 50 messages/batch, 1-second delay (safe for Gupshup limits)
+- **Retry Logic** — 3 attempts with smart error handling (401 permanent, 429 retry after 2s, 503 retry)
+- **Multi-language** — English (`en`) and Malayalam (`ml`) templates
+- **Responsive UI** — Works on mobile and desktop
 
 ---
 
-## Quick Start (Local — no Docker)
+## WhatsApp Templates (Gupshup)
+
+Register all 6 templates in your Gupshup dashboard before going live:
+
+| Template Name | Language | Variables |
+|---|---|---|
+| `payment_confirmation_en` | English | name, amount |
+| `payment_confirmation_ml` | Malayalam | name, amount |
+| `event_invitation_en` | English | name, eventName, date, time, venue |
+| `event_invitation_ml` | Malayalam | name, eventName, date, time, venue |
+| `programme_invitation_en` | English | name, programmeName, date, time, venue |
+| `programme_invitation_ml` | Malayalam | name, programmeName, date, time, venue |
+
+---
+
+## Quick Start (Local)
 
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local install **or** free MongoDB Atlas cluster)
-- Meta WhatsApp Business Account
+- Gupshup account with an approved WhatsApp app
 
 ### 1. Clone & Install
 
@@ -35,10 +67,7 @@ No Redis. No BullMQ. No Docker required for local development or free-tier deplo
 git clone <repo>
 cd DonorConnect
 
-# Backend
 cd backend && npm install
-
-# Frontend
 cd ../frontend && npm install
 ```
 
@@ -47,7 +76,7 @@ cd ../frontend && npm install
 ```bash
 cd backend
 cp .env.example .env
-# Fill in your actual credentials
+# Fill in your credentials
 ```
 
 **Required `.env` values:**
@@ -56,36 +85,13 @@ cp .env.example .env
 |---|---|
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | Long random string (32+ chars) |
-| `WHATSAPP_PHONE_NUMBER_ID` | From Meta Developer Dashboard |
-| `WHATSAPP_ACCESS_TOKEN` | Permanent access token |
-| `WHATSAPP_TEMPLATE_NAME` | Approved payment confirmation template |
-| `WHATSAPP_TEMPLATE_NAME_GENERAL` | Approved announcement template |
+| `GUPSHUP_API_KEY` | Your Gupshup API key |
+| `GUPSHUP_SOURCE_MOBILE` | Registered WhatsApp number (e.g. `+918888888888`) |
+| `GUPSHUP_APP_NAME` | Your Gupshup app name |
 | `ADMIN_EMAIL` | Seed admin email |
-| `ADMIN_PASSWORD` | Seed admin password |
+| `ADMIN_PASSWORD` | Seed admin password (min 8 chars) |
 
-### 3. WhatsApp Template Setup
-
-Create and get these templates approved in **Meta Business Manager → WhatsApp → Message Templates**:
-
-**Payment confirmation — English** (`donor_payment_confirmation`):
-```
-Hello {{1}}, We received your contribution of {{2}}. Thank you 🤍
-```
-
-**Payment confirmation — Malayalam** (`donor_payment_confirmation_ml`):
-```
-നമസ്കാരം {{1}}, ₹{{2}} സംഭാവന ലഭിച്ചു. നന്ദി 🤍
-```
-
-**General announcement** (`general_announcement`):
-```
-{{1}}
-```
-*(Single body variable — your full message text goes here)*
-
-All three must be approved by Meta before they can be sent.
-
-### 4. Start Services
+### 3. Start Services
 
 **Terminal 1 — Backend:**
 ```bash
@@ -99,7 +105,7 @@ cd frontend
 npm start     # http://localhost:3000
 ```
 
-### Default Admin Credentials
+### Default Admin
 ```
 Email:    admin@amanahtrack.com
 Password: Admin@123456
@@ -108,115 +114,176 @@ Override via `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`.
 
 ---
 
-## Free Deployment (No Docker)
+## Test Gupshup Integration
 
-### Database — MongoDB Atlas (free forever)
+Before deploying, verify your credentials and templates work locally:
+
+```bash
+cd backend
+
+# Test payment confirmation
+node scripts/test-gupshup.js --type=payment --phone=+918593826375 --lang=en --name="John" --amount=5000
+
+# Test event invitation (Malayalam)
+node scripts/test-gupshup.js --type=event --phone=+918593826375 --lang=ml --name="Rahul" \
+  --eventName="Annual Day" --date="25th April 2025" --time="10:00 AM" --venue="Auditorium"
+
+# Test programme invitation (English)
+node scripts/test-gupshup.js --type=programme --phone=+918593826375 --lang=en --name="Fathima" \
+  --programmeName="Graduation" --date="30th April 2025" --time="3:00 PM" --venue="Main Hall"
+```
+
+---
+
+## Deployment (Vercel)
+
+### 1. Database — MongoDB Atlas (free)
 
 1. Sign up at [cloud.mongodb.com](https://cloud.mongodb.com)
 2. Create a free **M0** cluster
-3. Create a database user and whitelist `0.0.0.0/0`
-4. Copy the connection string → use as `MONGODB_URI`
+3. Create a database user, whitelist `0.0.0.0/0`
+4. Copy the connection string → `MONGODB_URI`
 
-### Backend — Render.com (free tier)
-
-1. Push this repo to GitHub
-2. Go to [render.com](https://render.com) → **New → Web Service**
-3. Connect your GitHub repo, set:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
-   - **Start Command:** `node server.js`
-4. Add all variables from `.env.example` in the **Environment** tab
-5. Set `CLIENT_URL` to your Vercel frontend URL (fill in after step below)
-
-### Frontend — Vercel (free tier)
-
-1. Go to [vercel.com](https://vercel.com) → **New Project** → import repo
-2. Set **Root Directory** to `frontend`
-3. Add environment variable:
-   - `REACT_APP_API_URL` = `https://<your-render-backend>.onrender.com/api`
-4. Deploy — Vercel builds and serves the React app automatically
-
-> **Note:** Render free-tier instances spin down after 15 minutes of inactivity.
-> The first request after idle may take ~30 s to wake the backend.
-
-### Optional — Docker Compose (local only)
-
-A `docker-compose.yml` is included for local development convenience:
+### 2. Deploy to Vercel
 
 ```bash
-# Requires: Docker + a filled-in backend/.env
-docker-compose up -d --build
-# Frontend → http://localhost:3000
-# Backend  → http://localhost:5000
+npm i -g vercel
+vercel --prod
 ```
+
+### 3. Add Environment Variables
+
+In **Vercel Dashboard → Project → Settings → Environment Variables**, add all variables listed in `vercel-env-variables.txt`.
+
+> **Vercel limits:** Serverless functions time out at 30 seconds. Keep recipient lists under ~150 per request for bulk sends. Split larger lists into multiple calls from the frontend.
 
 ---
 
 ## API Reference
 
 ### Auth
-| Method | Route | Description |
-|---|---|---|
-| POST | `/api/auth/login` | Admin login |
-| GET | `/api/auth/me` | Get current admin |
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/login` | — | Admin login |
+| GET | `/api/auth/me` | JWT | Get current admin |
 
-### Donors
-| Method | Route | Description |
-|---|---|---|
-| GET | `/api/donors` | List donors (search, pagination) |
-| POST | `/api/donors` | Add donor |
-| PUT | `/api/donors/:id` | Update donor |
-| DELETE | `/api/donors/:id` | Soft-delete donor |
-| GET | `/api/donors/analytics` | Dashboard stats |
-| GET | `/api/donors/export/csv` | Export CSV |
+### Contacts
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| GET | `/api/contacts` | JWT | List contacts (search, pagination, tags) |
+| GET | `/api/contacts/tags` | JWT | List all unique tags |
+| POST | `/api/contacts` | JWT | Add contact |
+| POST | `/api/contacts/import` | JWT | Bulk import contacts |
+| PUT | `/api/contacts/:id` | JWT | Update contact |
+| DELETE | `/api/contacts/:id` | JWT | Soft-delete contact |
 
-### Payments
-| Method | Route | Description |
-|---|---|---|
-| POST | `/api/mark-paid` | Mark single donor paid + queue WhatsApp |
-| POST | `/api/mark-paid/bulk` | Bulk mark paid + queue WhatsApp |
-| GET | `/api/logs` | Message delivery logs |
+### Broadcasts
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| GET | `/api/broadcasts` | JWT | List broadcasts |
+| GET | `/api/broadcasts/stats` | JWT | Broadcast statistics |
+| POST | `/api/broadcasts` | JWT | Create broadcast |
+| GET | `/api/broadcasts/:id` | JWT | Get broadcast details |
+| POST | `/api/broadcasts/:id/send` | JWT | Trigger broadcast send |
+| GET | `/api/broadcasts/:id/logs` | JWT | Delivery logs |
+| DELETE | `/api/broadcasts/:id` | JWT | Delete draft broadcast |
 
-### Messages
-| Method | Route | Description |
-|---|---|---|
-| POST | `/api/messages/send-bulk` | Send announcement to selected donors |
-| GET | `/api/messages/progress/:jobId` | SSE stream — live send progress |
+### Notifications
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/api/notify/event` | JWT | Send event invitations |
+| POST | `/api/notify/programme` | JWT | Send programme invitations |
+| POST | `/api/notify/bulk-payment` | JWT | Send payment confirmations |
+| GET | `/api/notify/logs` | JWT | Notification history (filterable) |
+| POST | `/api/notify/resend/:id` | JWT | Resend a failed notification |
 
-#### Bulk send example
+#### Event invitation example
 ```bash
-curl -X POST https://<host>/api/messages/send-bulk \
+curl -X POST https://<host>/api/notify/event \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"donorIds": ["..."], "message": "Ramadan Mubarak!"}'
-# → { "success": true, "data": { "jobId": "uuid", "total": 12 } }
+  -d '{
+    "recipients": [
+      { "phone": "+918593826375", "name": "John", "language": "en" },
+      { "phone": "+918593826376", "name": "Rahul", "language": "ml" }
+    ],
+    "eventName": "Annual Day 2025",
+    "date": "25th April 2025",
+    "time": "10:00 AM",
+    "venue": "School Auditorium"
+  }'
 ```
 
-#### SSE progress stream
-```js
-const es = new EventSource(`/api/messages/progress/${jobId}?token=${jwt}`);
-es.addEventListener('progress', (e) => console.log(JSON.parse(e.data)));
-// { donorId: "...", status: "sent" | "failed" }
-es.addEventListener('done', () => es.close());
+#### CSV format for bulk upload
+```csv
+name,phone,language
+John,+918593826375,en
+Rahul,+918593826376,ml
+Fathima,+918593826377,ml
 ```
+Language defaults to `en` if omitted. Invalid E.164 numbers are skipped with a report.
 
 ---
 
-## Features
+## Project Structure
 
-- **JWT Authentication** — Secure admin-only access
-- **Donor Management** — Add, edit, deactivate donors
-- **Payment Recording** — Single & bulk mark as paid
-- **WhatsApp Automation** — Template messages via Meta Cloud API
-- **Bulk Announcements** — Send any message to selected donors with live progress
-- **In-memory Rate Queue** — 500 ms between sends, respects Meta rate limits, zero infra
-- **SSE Progress** — Real-time per-donor status (✓ sent / ✗ failed) streamed to browser
-- **Retry Logic** — 3-attempt exponential backoff (2 s, 4 s, 8 s)
-- **Message Logs** — Full audit trail of every notification
-- **Analytics Dashboard** — Totals, averages, delivery rate
-- **CSV Export** — Download all donor data
-- **Multi-language** — English & Malayalam message support
-- **Responsive UI** — Works on mobile and desktop
+```
+DonorConnect/
+├── backend/
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── broadcastController.js
+│   │   ├── contactController.js
+│   │   ├── notificationController.js   ← event / programme / payment
+│   │   └── webhookController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   └── errorHandler.js
+│   ├── models/
+│   │   ├── Admin.js
+│   │   ├── Broadcast.js
+│   │   ├── BroadcastLog.js
+│   │   ├── Contact.js
+│   │   └── NotificationLog.js          ← new
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── broadcasts.js
+│   │   ├── contacts.js
+│   │   ├── notifications.js            ← new
+│   │   └── webhook.js
+│   ├── scripts/
+│   │   └── test-gupshup.js             ← local integration test
+│   ├── services/
+│   │   └── whatsappService.js          ← Gupshup API
+│   ├── utils/
+│   │   ├── logger.js
+│   │   ├── seedAdmin.js
+│   │   └── validators.js
+│   ├── .env.example
+│   └── server.js
+├── frontend/
+│   └── src/
+│       ├── components/
+│       │   ├── common/Layout.jsx
+│       │   └── notifications/
+│       │       ├── EventForm.jsx
+│       │       ├── ProgrammeForm.jsx
+│       │       └── NotificationHistory.jsx
+│       ├── context/AuthContext.jsx
+│       ├── pages/
+│       │   ├── BroadcastLogsPage.jsx
+│       │   ├── BroadcastsPage.jsx
+│       │   ├── ContactsPage.jsx
+│       │   ├── CreateBroadcastPage.jsx
+│       │   ├── DashboardPage.jsx
+│       │   ├── LoginPage.jsx
+│       │   ├── NotificationsPage.jsx   ← new
+│       │   └── SettingsPage.jsx
+│       ├── services/api.js
+│       └── App.jsx
+├── vercel.json
+└── vercel-env-variables.txt
+```
 
 ---
 
@@ -228,56 +295,4 @@ es.addEventListener('done', () => es.close());
 - Phone number E.164 format validation
 - Input sanitization via express-validator
 - MongoDB injection protection via Mongoose
-- Environment variables for all secrets
-
----
-
-## Project Structure
-
-```
-DonorConnect/
-├── backend/
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── donorController.js
-│   │   ├── messageController.js   ← bulk send + SSE progress
-│   │   └── paymentController.js
-│   ├── middleware/
-│   │   ├── auth.js
-│   │   └── errorHandler.js
-│   ├── models/
-│   │   ├── Admin.js
-│   │   ├── Donor.js
-│   │   └── MessageLog.js
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── donors.js
-│   │   ├── messages.js            ← /send-bulk, /progress/:jobId
-│   │   └── payments.js
-│   ├── services/
-│   │   └── whatsappService.js
-│   ├── utils/
-│   │   ├── logger.js
-│   │   ├── messageQueue.js        ← in-memory rate-limited queue
-│   │   ├── seedAdmin.js
-│   │   └── validators.js
-│   └── server.js
-└── frontend/
-    └── src/
-        ├── components/
-        │   ├── common/Layout.jsx
-        │   └── donors/
-        │       ├── AddDonorModal.jsx
-        │       ├── BulkMarkPaidModal.jsx
-        │       ├── BulkSendMessageModal.jsx  ← new
-        │       ├── DonorTable.jsx
-        │       └── MarkPaidModal.jsx
-        ├── context/AuthContext.jsx
-        ├── pages/
-        │   ├── DashboardPage.jsx
-        │   ├── DonorsPage.jsx
-        │   ├── LoginPage.jsx
-        │   └── LogsPage.jsx
-        ├── services/api.js
-        └── App.jsx
-```
+- Environment variables for all secrets — never commit `.env`
