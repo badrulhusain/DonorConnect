@@ -8,6 +8,8 @@ import ContactsPage from './pages/ContactsPage';
 import BroadcastsPage from './pages/BroadcastsPage';
 import CreateBroadcastPage from './pages/CreateBroadcastPage';
 import BroadcastLogsPage from './pages/BroadcastLogsPage';
+import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import Layout from './components/common/Layout';
 
 const ProtectedRoute = ({ children }) => {
@@ -45,6 +47,8 @@ export default function App() {
             <Route path="broadcasts" element={<BroadcastsPage />} />
             <Route path="broadcasts/new" element={<CreateBroadcastPage />} />
             <Route path="broadcasts/:id/logs" element={<BroadcastLogsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

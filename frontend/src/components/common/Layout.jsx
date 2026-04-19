@@ -5,6 +5,8 @@ import {
   HomeIcon,
   UserGroupIcon,
   MegaphoneIcon,
+  BellIcon,
+  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
@@ -14,6 +16,8 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: HomeIcon, end: true },
   { to: '/contacts', label: 'Contacts', icon: UserGroupIcon },
   { to: '/broadcasts', label: 'Broadcasts', icon: MegaphoneIcon },
+  { to: '/notifications', label: 'Notifications', icon: BellIcon },
+  { to: '/settings', label: 'Settings & Test', icon: Cog6ToothIcon },
 ];
 
 export default function Layout() {

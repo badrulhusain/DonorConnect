@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────
+# AmanahTrack — Vercel Environment Variables
+# Add ALL of these in: Vercel Dashboard → Project → Settings → Environment Variables
+# Set environment scope to: Production, Preview, Development (as needed)
+# ─────────────────────────────────────────────────────────────
+
+# ── Server ────────────────────────────────────────────────────
+NODE_ENV=production
+PORT=5000
+
+# ── MongoDB Atlas ─────────────────────────────────────────────
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/donorConnect?retryWrites=true&w=majority
+
+# ── JWT ───────────────────────────────────────────────────────
+JWT_SECRET=<generate-a-long-random-secret-min-32-chars>
+JWT_EXPIRES_IN=7d
+
+# ── CORS ──────────────────────────────────────────────────────
+# Set to your Vercel frontend URL (no trailing slash)
+CLIENT_URL=https://your-app.vercel.app
+
+# ── Gupshup (replaces Meta Cloud API) ────────────────────────
+GUPSHUP_API_KEY=<your-gupshup-api-key>
+GUPSHUP_SOURCE_MOBILE=<registered-whatsapp-number-with-country-code>
+# Example: +918888888888
+GUPSHUP_APP_NAME=<your-gupshup-app-name>
+
+# ── Seeded Admin (used only on first boot) ────────────────────
+ADMIN_EMAIL=admin@amanahtrack.com
+ADMIN_PASSWORD=<strong-password-min-8-chars>
+
+# ── Broadcast Tuning (optional, defaults apply) ───────────────
+WHATSAPP_BATCH_SIZE=50
+WHATSAPP_BATCH_DELAY_MS=1000
+
+# ─────────────────────────────────────────────────────────────
+# REMOVED — these were Meta Cloud API vars, no longer needed:
+#   WHATSAPP_API_URL
+#   WHATSAPP_PHONE_NUMBER_ID
+#   WHATSAPP_ACCESS_TOKEN
+#   WHATSAPP_TEMPLATE_NAME
+#   WHATSAPP_TEMPLATE_NAME_ML
+# ─────────────────────────────────────────────────────────────
+
+# ── Frontend env (set in frontend/.env or Vercel for React) ──
+# REACT_APP_API_URL=https://your-api.vercel.app/api
+# (or leave blank to use relative /api if frontend+backend share domain)
